@@ -16,7 +16,7 @@ function ThemeMRU {
         "aero.theme"
     ) | ForEach-Object { "$windir\resources\Themes\$_" }) -join ';');" -PropertyType String -Force
 }
-if ($ThemeMRU) { ThemeMRU; exit }
+if ($ThemeMRU) { exit }
 
 $title = 'Preparing Atlas user settings...'
 
@@ -39,9 +39,6 @@ if ([System.Environment]::OSVersion.Version.Build -ge 22000) {
     # Set ThemeMRU (recent themes)
     ThemeMRU | Out-Null
 }
-
-# Set lockscreen wallpaper
-& "$atlasModules\Scripts\lockscreen.ps1"
 
 # Disable 'Network' in navigation pane
 reg import "$atlasDesktop\3. General Configuration\Network Discovery\Network Navigation Pane\Disable Network Navigation Pane (default).reg" *>$null

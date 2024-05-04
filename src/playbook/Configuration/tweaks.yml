@@ -163,7 +163,7 @@ tasks:
   #  qol\appearance                                                            #
   # -------------------------------------------------------------------------- #
   - tweaks\qol\appearance\blue-tooltips.yml
-  - tweaks\qol\appearance\atlas-theme.yml
+  - tweaks\qol\appearance\lockscreen.yml
   - tweaks\qol\appearance\disallow-theme-changes.yml
 
   # -------------------------------------------------------------------------- #
