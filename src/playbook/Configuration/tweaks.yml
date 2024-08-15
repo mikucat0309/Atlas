@@ -330,7 +330,7 @@ tasks:
   - tweaks\scripts\script-core-isolation.yml
   - tweaks\scripts\script-mitigations.yml
   - tweaks\scripts\script-devices.yml
-  - tweaks\scripts\script-pfp.yml
+  # - tweaks\scripts\script-pfp.yml
   - tweaks\scripts\script-finalize.yml
   - tweaks\scripts\script-backup2.yml
   - tweaks\scripts\script-clientcbs.yml
@@ -348,7 +348,7 @@ tasks:
   - tweaks\statuses\status-misc.yml
   - tweaks\misc\config-time.yml
   - tweaks\misc\delete-windows-specific-files.yml
-  - tweaks\misc\config-oem-information.yml
+  # - tweaks\misc\config-oem-information.yml
   - tweaks\misc\rebuild-perf-counters.yml
   - tweaks\misc\create-shortcuts.yml
   - tweaks\misc\add-music-videos-to-home.yml
