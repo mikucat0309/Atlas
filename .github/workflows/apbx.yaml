@@ -132,17 +132,16 @@ jobs:
       - name: Create playbook (ZIP/APBX password is malte)
         if: ${{ steps.config-playbook.outcome != 'skipped' }}
         run: |
+          export GITHUB_SHA_SHORT=${GITHUB_SHA::8}
+          echo "GITHUB_SHA_SHORT=${GITHUB_SHA_SHORT}" >> $GITHUB_ENV
           cd src/playbook
           echo "Making a renamed password protected (malte) ZIP of playbook files..."
           zip -r -P malte "Atlas Playbook ${GITHUB_SHA::8}.apbx" . -x "local-build.cmd"
-          echo "Move the .abpx playbook into the 'Release ZIP' to be released as an artifact with the additional files..."
-          mv "Atlas Playbook ${GITHUB_SHA::8}.apbx" "../release-zip"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         if: ${{ steps.config-playbook.outcome != 'skipped' }}
         with:
-          name: Atlas Playbook
-          path: |
-            src/release-zip/*
+          name: Atlas Playbook ${{ env.GITHUB_SHA_SHORT }}.apbx
+          path: src/playbook/Atlas Playbook ${{ env.GITHUB_SHA_SHORT }}.apbx
           if-no-files-found: error
