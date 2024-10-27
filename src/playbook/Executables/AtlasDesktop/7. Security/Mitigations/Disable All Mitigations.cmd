@@ -3,8 +3,14 @@ setlocal EnableDelayedExpansion
 
 if "%~1" == "/silent" goto main
 
-whoami /user | find /i "S-1-5-18" > nul 2>&1 || (
-	call RunAsTI.cmd "%~f0" %*
+set "___args="%~f0" %*"
+fltmc > nul 2>&1 || (
+	echo Administrator privileges are required.
+	powershell -c "Start-Process -Verb RunAs -FilePath 'cmd' -ArgumentList """/c $env:___args"""" 2> nul || (
+		echo You must run this script as admin.
+		if "%*"=="" pause
+		exit /b 1
+	)
 	exit /b
 )
 
@@ -18,7 +24,7 @@ reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\kernel" /v "DisableExceptionChainValidation" /t REG_DWORD /d "1" /f > nul
 
 :: Disable Control Flow Guard (CFG)
-:: Find correct mitigation values for different Windows versions - AMIT
+:: Find correct mitigation values for different Windows versions
 :: Initialize bit mask in registry by disabling a random mitigation
 PowerShell -NoP -C "Set-ProcessMitigation -System -Disable CFG" > nul
 

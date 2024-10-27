@@ -1,7 +1,6 @@
 Add-Type -AssemblyName System.Drawing
 $img = [System.Drawing.Image]::FromFile((Get-Item '.\user.png'))
 
-$perUserResolutions = @(1080, 448, 424, 240, 208, 192, 96, 64, 48, 40, 32)
 $resolutions = @{
     "user.png" = 448
     "user.bmp" = 448
@@ -21,36 +20,4 @@ foreach ($image in $resolutions.Keys) {
     $graph = [System.Drawing.Graphics]::FromImage($a)
     $graph.DrawImage($img, 0, 0, $resolution, $resolution)
     $a.Save("$([Environment]::GetFolderPath('CommonApplicationData'))\Microsoft\User Account Pictures\$image")
-}
-
-# Set Atlas profile picture for each user
-function SetUserProfileImage($sid) {
-    $usrPfpDir = "$env:public\AccountPictures\$sid"
-
-    if (!(Test-Path $usrPfpDir)) {
-        # New-Item -Path $usrPfpDir -ItemType Directory -Force | Out-Null
-        # This doesn't overwrite users that have manually set profile pictures
-        Write-Host "Not applying Atlas profile picture to $sid..."
-        return
-    }
-
-    foreach ($resolution in $perUserResolutions) {
-        $a = New-Object System.Drawing.Bitmap($resolution, $resolution)
-        $graph = [System.Drawing.Graphics]::FromImage($a)
-        $graph.DrawImage($img, 0, 0, $resolution, $resolution)
-        $a.Save("$usrPfpDir\$resolution`x$resolution.png")
-    
-        New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AccountPicture\Users\$sid" -Name "Image$resolution" `
-        -PropertyType String -Value "$usrPfpDir\$resolution`x$resolution.png" -Force | Out-Null
-        
-        Write-Host "Applied Atlas profile picture to $sid..."
-    }
-}
-
-# Recurse through user keys and set profile pictures
-foreach ($userKey in $((Get-ChildItem -Path "Registry::HKEY_USERS").Name | Where-Object { $_ -like 'HKEY_USERS\S-*' })) {
-    Get-ItemProperty -Path "Registry::$userKey\Volatile Environment" -ErrorAction SilentlyContinue | Out-Null
-    if ($?) {
-        SetUserProfileImage "$($userKey -replace 'HKEY_USERS\\','')"
-    }
 }

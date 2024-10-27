@@ -1,5 +1,8 @@
 #Requires -RunAsAdministrator
 
+$windir = [Environment]::GetFolderPath('Windows')
+& "$windir\AtlasModules\initPowerShell.ps1"
+
 Write-Host "`nRestoring default power schemes..." -ForegroundColor Yellow
 # This should set the power plan to 'Balanced' by default
 powercfg /restoredefaultschemes | Out-Null
@@ -74,9 +77,6 @@ Remove-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\stornvme\Para
 # Reset power throttling to default
 # Reference: https://blogs.windows.com/windows-insider/2017/04/18/introducing-power-throttling
 Remove-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling" -Name "PowerThrottlingOff" -ErrorAction SilentlyContinue
-# Enable the kernel being tickless
-# Reference: https://docs.microsoft.com/en-us/windows-hardware/drivers/devtest/bcdedit--set#additional-settings
-bcdedit /deletevalue disabledynamictick *> $null
 
 # Finish
-$null = Read-Host "`nCompleted.`nPress Enter to exit"
+Read-Pause "`nCompleted.`nPress Enter to exit"

@@ -4,30 +4,33 @@ param (
 	[switch]$Firefox
 )
 
+.\AtlasModules\initPowerShell.ps1
+
 # ----------------------------------------------------------------------------------------------------------- #
 # Software is no longer installed with a package manager anymore to be as fast and as reliable as possible.   #
 # ----------------------------------------------------------------------------------------------------------- #
 
+$timeouts = @("--connect-timeout", "10", "--retry", "5", "--retry-delay", "0", "--retry-all-errors")
 $msiArgs = "/qn /quiet /norestart ALLUSERS=1 REBOOT=ReallySuppress"
 $arm = ((Get-CimInstance -Class Win32_ComputerSystem).SystemType -match 'ARM64') -or ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64')
-$armString = ('x64', 'arm64')[$arm]
 
 # Create temporary directory
-$tempDir = Join-Path -Path $([System.IO.Path]::GetTempPath()) -ChildPath $([System.Guid]::NewGuid())
+function Remove-TempDirectory { Pop-Location; Remove-Item -Path $tempDir -Force -Recurse -EA 0 }
+$tempDir = Join-Path -Path $(Get-SystemDrive) -ChildPath $([System.Guid]::NewGuid())
 New-Item $tempDir -ItemType Directory -Force | Out-Null
 Push-Location $tempDir
 
 # Brave
 if ($Brave) {
 	Write-Output "Downloading Brave..."
-	& curl.exe -LSs "https://laptop-updates.brave.com/latest/winx64" -o "$tempDir\BraveSetup.exe"
+	& curl.exe -LSs "https://laptop-updates.brave.com/latest/winx64" -o "$tempDir\BraveSetup.exe" $timeouts
 	if (!$?) {
 		Write-Error "Downloading Brave failed."
 		exit 1
 	}
 
 	Write-Output "Installing Brave..."
-	& "$tempDir\BraveSetup.exe" /silent /install 2>&1 | Out-Null
+	Start-Process -FilePath "$tempDir\BraveSetup.exe" -WindowStyle Hidden -ArgumentList '/silent /install'
 
 	do {
 		$processesFound = Get-Process | Where-Object { "BraveSetup" -contains $_.Name } | Select-Object -ExpandProperty Name
@@ -35,35 +38,36 @@ if ($Brave) {
 			Write-Output "Still running BraveSetup."
 			Start-Sleep -Seconds 2
 		} else {
-			Remove-Item "$tempDir" -ErrorAction SilentlyContinue -Force -Recurse
+			Remove-TempDirectory
 		}
 	} until (!$processesFound)
 
-	Stop-Process -Name "brave" -Force -ErrorAction SilentlyContinue
+	Stop-Process -Name "brave" -Force -EA 0
 	exit
 }
 
 # Firefox
 if ($Firefox) {
-	if ($arm) {
-		$firefoxArch = 'win64-aarch64'
-	} else {
-		$firefoxArch = 'win64'
-	}
+	$firefoxArch = ('win64', 'win64-aarch64')[$arm]
 
 	Write-Output "Downloading Firefox..."
-	& curl.exe -LSs "https://download.mozilla.org/?product=firefox-latest-ssl&os=$firefoxArch&lang=en-US" -o "$tempDir\firefox.exe"
+	& curl.exe -LSs "https://download.mozilla.org/?product=firefox-latest-ssl&os=$firefoxArch&lang=en-US" -o "$tempDir\firefox.exe" $timeouts
 	Write-Output "Installing Firefox..."
-	Start-Process -FilePath "$tempDir\firefox.exe" -WindowStyle Hidden -ArgumentList '/S /ALLUSERS=1' -Wait 2>&1 | Out-Null
+	Start-Process -FilePath "$tempDir\firefox.exe" -WindowStyle Hidden -ArgumentList '/S /ALLUSERS=1' -Wait
+	
+	Remove-TempDirectory
 	exit
 }
 
 # Chrome
 if ($Chrome) {
 	Write-Output "Downloading Google Chrome..."
-	& curl.exe -LSs "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi" -o "$tempDir\chrome.msi"
+	$chromeArch = ('64', '_Arm64')[$arm]
+	& curl.exe -LSs "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise$chromeArch.msi" -o "$tempDir\chrome.msi" $timeouts
 	Write-Output "Installing Google Chrome..."
-	Start-Process -FilePath "$tempDir\chrome.msi" -WindowStyle Hidden -ArgumentList '/qn' -Wait 2>&1 | Out-Null
+	Start-Process -FilePath "$tempDir\chrome.msi" -WindowStyle Hidden -ArgumentList '/qn' -Wait
+
+	Remove-TempDirectory
 	exit
 }
 
@@ -104,7 +108,7 @@ foreach ($a in $vcredists.GetEnumerator()) {
 	
 	# curl is faster than Invoke-WebRequest
 	Write-Output "Downloading and installing Visual C++ Runtime $vcName..."
-	& curl.exe -LSs "$vcUrl" -o "$vcExePath"
+	& curl.exe -LSs "$vcUrl" -o "$vcExePath" $timeouts
 
 	if ($vcArgs -match ":") {
 		$msiDir = "$tempDir\vcredist-$vcName"
@@ -123,21 +127,72 @@ foreach ($a in $vcredists.GetEnumerator()) {
 	}
 }
 
-# 7-Zip
-$website = 'https://7-zip.org/'
-$download = $website + ((Invoke-WebRequest $website -UseBasicParsing).Links.href | Where-Object { $_ -like "a/7z*-$armString.exe" })
-Write-Output "Downloading 7-Zip..."
-& curl.exe -LSs $download -o "$tempDir\7zip.exe"
-Write-Output "Installing 7-Zip..."
-Start-Process -FilePath "$tempDir\7zip.exe" -WindowStyle Hidden -ArgumentList '/S' -Wait 2>&1 | Out-Null
+# NanaZip
+function Install7Zip {
+	$website = 'https://7-zip.org/'
+	$7zipArch = ('x64', 'arm64')[$arm]
+	$download = $website + ((Invoke-WebRequest $website -UseBasicParsing).Links.href | Where-Object { $_ -like "a/7z*-$7zipArch.exe" })
+	Write-Output "Downloading 7-Zip..."
+	& curl.exe -LSs $download -o "$tempDir\7zip.exe" $timeouts
+	Write-Output "Installing 7-Zip..."
+	Start-Process -FilePath "$tempDir\7zip.exe" -WindowStyle Hidden -ArgumentList '/S' -Wait
+}
+
+$githubApi = Invoke-RestMethod "https://api.github.com/repos/M2Team/NanaZip/releases/latest" -EA 0
+$assets = $githubApi.Assets.browser_download_url | Select-String ".xml", ".msixbundle" | Select-Object -Unique -First 2
+function InstallNanaZip {
+	Write-Output "Downloading NanaZip..."	
+	$path = New-Item "$tempDir\nanazip" -ItemType Directory
+	$assets | ForEach-Object {
+		$filename = $_ -split '/' | Select-Object -Last 1
+		Write-Output "Downloading '$filename'..."
+		& curl.exe -LSs $_ -o "$path\$filename" $timeouts
+	}
+
+	Write-Output "Installing NanaZip..."	
+	try {
+		$appxArgs = @{
+			"PackagePath" = (Get-ChildItem $path -Filter "*.msixbundle" | Select-Object -First 1).FullName
+			"LicensePath" = (Get-ChildItem $path -Filter "*.xml" | Select-Object -First 1).FullName
+		}
+		Add-AppxProvisionedPackage -Online @appxArgs | Out-Null
+		
+		Write-Output "Installed NanaZip!"
+	} catch {
+		Write-Error "Failed to install NanaZip! Getting 7-Zip instead. $_"
+		Install7Zip
+	}
+}
+
+if ($assets.Count -eq 2) {
+	$7zipRegistry = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\7-Zip"
+	if (Test-Path $7zipRegistry) {
+		$Message = @'
+Would you like to uninstall 7-Zip and replace it with NanaZip?
+
+NanaZip is a fork of 7-Zip with an updated user interface and extra features.
+'@
+
+		if ((Read-MessageBox -Title 'Installing NanaZip - Atlas' -Body $Message -Icon Question) -eq 'Yes') {
+			$7zipUninstall = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\7-Zip" -Name "QuietUninstallString" -EA 0).QuietUninstallString
+			Write-Output "Uninstalling 7-Zip..."
+			Start-Process -FilePath "cmd" -WindowStyle Hidden -ArgumentList "/c $7zipUninstall" -Wait
+			InstallNanaZip
+		}
+	} else {
+		InstallNanaZip
+	}
+} else {
+	Write-Error "Can't access GitHub API, downloading 7-Zip instead of NanaZip."
+	Install7Zip
+}
 
 # Legacy DirectX runtimes
-& curl.exe -LSs "https://download.microsoft.com/download/8/4/A/84A35BF1-DAFE-4AE8-82AF-AD2AE20B6B14/directx_Jun2010_redist.exe" -o "$tempDir\directx.exe"
+& curl.exe -LSs "https://download.microsoft.com/download/8/4/A/84A35BF1-DAFE-4AE8-82AF-AD2AE20B6B14/directx_Jun2010_redist.exe" -o "$tempDir\directx.exe" $timeouts
 Write-Output "Extracting legacy DirectX runtimes..."
-Start-Process -FilePath "$tempDir\directx.exe" -WindowStyle Hidden -ArgumentList "/q /c /t:`"$tempDir\directx`"" -Wait 2>&1 | Out-Null
+Start-Process -FilePath "$tempDir\directx.exe" -WindowStyle Hidden -ArgumentList "/q /c /t:`"$tempDir\directx`"" -Wait
 Write-Output "Installing legacy DirectX runtimes..."
-Start-Process -FilePath "$tempDir\directx\dxsetup.exe" -WindowStyle Hidden -ArgumentList '/silent' -Wait 2>&1 | Out-Null
+Start-Process -FilePath "$tempDir\directx\dxsetup.exe" -WindowStyle Hidden -ArgumentList '/silent' -Wait
 
 # Remove temporary directory
-Pop-Location
-Remove-Item -Path $tempDir -Force -Recurse *>$null
+Remove-TempDirectory

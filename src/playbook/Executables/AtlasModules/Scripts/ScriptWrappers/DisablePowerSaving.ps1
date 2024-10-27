@@ -4,6 +4,9 @@ param (
     [switch]$Silent
 )
 
+$windir = [Environment]::GetFolderPath('Windows')
+& "$windir\AtlasModules\initPowerShell.ps1"
+
 if (!$Silent) {
     $isLaptop = (Get-CimInstance -Class Win32_ComputerSystem -Property PCSystemType).PCSystemType -eq 2
     if ($isLaptop) {
@@ -35,8 +38,6 @@ powercfg /setacvalueindex scheme_current 0012ee47-9041-4b5d-9b77-535fba8b1442 d3
 powercfg /setacvalueindex scheme_current 0012ee47-9041-4b5d-9b77-535fba8b1442 d639518a-e56d-4345-8af2-b9f32fb26109 0
 ## NVME NOPPME - Off
 powercfg /setacvalueindex scheme_current 0012ee47-9041-4b5d-9b77-535fba8b1442 fc7372b6-ab2d-43ee-8797-15e9841f2cca 0
-## Slide show - Paused
-powercfg /setacvalueindex scheme_current 0d7dbae2-4294-402a-ba8e-26777e8488cd 309dce9b-bef4-4119-9921-a851fb12f0f4 1
 ## Hub Selective Suspend Timeout - 0 miliseconds
 powercfg /setacvalueindex scheme_current 2a737441-1930-4402-8d77-b2bebba308a3 0853a681-27c8-4100-a2fd-82013e970683 0
 ## USB selective suspend - Disabled
@@ -56,7 +57,7 @@ powercfg /setacvalueindex scheme_current 54533251-82be-4824-96c1-47b60b740d00 4d
 powercfg /setactive scheme_current
 
 Write-Host "Disabling power-saving ACPI devices..." -ForegroundColor Yellow
-& toggleDev.cmd -Disable '@("ACPI Processor Aggregator", "Microsoft Windows Management Interface for ACPI")' | Out-Null
+& "$windir\AtlasModules\Scripts\toggleDev.cmd" -Disable '@("ACPI Processor Aggregator", "Microsoft Windows Management Interface for ACPI")' | Out-Null
 
 Write-Host "Disabling network adapter power-saving..." -ForegroundColor Yellow
 $properties = Get-NetAdapter -Physical | Get-NetAdapterAdvancedProperty
@@ -126,10 +127,6 @@ New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\stornvme\Paramet
 $powerKey = "HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling"
 if (!(Test-Path $powerKey)) { New-Item $powerKey | Out-Null }
 New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling" -Name "PowerThrottlingOff" -Value 1 -PropertyType DWORD -Force | Out-Null
-# Disable the kernel from being tickless
-# It's power saving
-# https://docs.microsoft.com/en-us/windows-hardware/drivers/devtest/bcdedit--set#additional-settings
-bcdedit /set disabledynamictick yes | Out-Null
 
 if ($Silent) { exit }
-$null = Read-Host "`nCompleted.`nPress Enter to exit"
+Read-Pause "`nCompleted.`nPress Enter to exit"

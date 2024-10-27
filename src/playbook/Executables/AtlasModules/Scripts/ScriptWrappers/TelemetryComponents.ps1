@@ -1,5 +1,8 @@
 $ProgressPreference = 'SilentlyContinue'
-function Pause ($message = "Press Enter to exit") { $null = Read-Host $message }
+
+$windir = [Environment]::GetFolderPath('Windows')
+& "$windir\AtlasModules\initPowerShell.ps1"
+
 function Write-BulletPoint($message) {
 	Write-Host " - " -ForegroundColor Green -NoNewline
 	Write-Host $message
@@ -11,14 +14,14 @@ function Restart {
 		Restart-Computer
 	} else {
 		Write-Host "`nChanges will apply after next restart." -ForegroundColor Yellow
-		Pause
+		Read-Pause
 	}
 }
 
-$packageInstall = "$([Environment]::GetFolderPath('Windows'))\AtlasModules\Scripts\packageInstall.ps1"
+$packageInstall = "$windir\AtlasModules\Scripts\packageInstall.ps1"
 if (!(Test-Path $packageInstall)) {
     Write-Host "Missing package install script, can't continue."
-    Pause
+    Read-Pause
     exit 1
 }
 
@@ -29,7 +32,7 @@ try {
 } catch {
 	if (!$?) {
 		Write-Host "Failed to get packages! $_" -ForegroundColor Red
-		Pause
+		Read-Pause
 		exit 1
 	}
 }
@@ -53,6 +56,10 @@ Removing the package restores the telemetry components, which can aid in trouble
 	Write-BulletPoint @"
 Atlas retains policies that should disable telemetry even after the package removal. These policies
    do not work on Windows Home edition.
+"@
+
+	Write-BulletPoint @"
+This package isn't needed on Education or Enterprise-based editions.
 "@
 
 	Write-Host "`n---------------------------------------------------------------------------------------------------------`n" -ForegroundColor Magenta

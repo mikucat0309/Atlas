@@ -1,14 +1,20 @@
 @echo off
 
-whoami /user | find /i "S-1-5-18" > nul 2>&1 || (
-	call RunAsTI.cmd "%~f0" %*
+set "___args="%~f0" %*"
+fltmc > nul 2>&1 || (
+	echo Administrator privileges are required.
+	powershell -c "Start-Process -Verb RunAs -FilePath 'cmd' -ArgumentList """/c $env:___args"""" 2> nul || (
+		echo You must run this script as admin.
+		if "%*"=="" pause
+		exit /b 1
+	)
 	exit /b
 )
 
 echo Setting network settings to Atlas defaults...
 
 :: Set network adapter driver registry key
-for /f %%a in ('wmic path Win32_NetworkAdapter get PNPDeviceID^| findstr /L "PCI\VEN_"') do (
+for /f "usebackq" %%a in (`powershell -NonI -NoP -C "(Get-CimInstance Win32_NetworkAdapter).PNPDeviceID | sls 'PCI\\VEN_'"`) do (
 	for /f "tokens=3" %%b in ('reg query "HKLM\SYSTEM\CurrentControlSet\Enum\%%a" /v "Driver"') do ( 
         set "netKey=HKLM\SYSTEM\CurrentControlSet\Control\Class\%%b"
     ) > nul 2>&1

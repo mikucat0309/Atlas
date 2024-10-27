@@ -4,14 +4,16 @@ description: Disables Windows Update from automatically updating Windows for QoL
 actions:
     # Disable auto-updates
   - !cmd:
-    command: 'reg import "AtlasDesktop\3. General Configuration\Windows Update\Automatic Updates\Disable Automatic Updates (default).reg"'
+    command: 'reg import "AtlasDesktop\3. General Configuration\Automatic Updates\Disable Automatic Updates (default).reg"'
     exeDir: true
     wait: true
-    option: 'disable-auto-updates'
+    option: 'auto-updates-disable'
 
     # Prevent DevHome & Outlook from re-installing
-  - !registryKey: {path: 'HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Orchestrator\UScheduler\DevHomeUpdate'}
-  - !registryKey: {path: 'HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Orchestrator\UScheduler\OutlookUpdate'}
+  - !registryKey: {path: 'HKLM\SOFTWARE\Microsoft\WindowsUpdate\Orchestrator\UScheduler_Oobe\DevHomeUpdate'}
+  - !registryValue: {path: 'HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Orchestrator\UScheduler\DevHomeUpdate', value: 'workCompleted', type: REG_DWORD, data: '1'}
+  - !registryKey: {path: 'HKLM\SOFTWARE\Microsoft\WindowsUpdate\Orchestrator\UScheduler_Oobe\OutlookUpdate'}
+  - !registryValue: {path: 'HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Orchestrator\UScheduler\OutlookUpdate', value: 'workCompleted', type: REG_DWORD, data: '1'}
 
     # Prevent random apps from installing, including Widgets or advertisements
     # Commented until it's proven that this helps - deleting these values is irreversible

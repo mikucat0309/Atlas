@@ -4,7 +4,7 @@ description: Executes script to configure power settings for the best performanc
 actions:
     # Disable power saving features
   - !cmd:
-    command: '"AtlasDesktop\3. General Configuration\Power\Power-saving\Disable Power-saving.cmd" -Silent'
+    command: '"AtlasDesktop\3. General Configuration\Power-saving\Disable Power-saving.cmd" -Silent'
     exeDir: true
     wait: true
     weight: 20
@@ -20,7 +20,7 @@ actions:
     # Disable Hibernation
     # Disabling makes NTFS accessible outside of Windows
   - !cmd:
-    command: '"AtlasDesktop\3. General Configuration\Power\Hibernation\Disable Hibernation (default).cmd" /silent'
+    command: '"AtlasDesktop\3. General Configuration\Hibernation\Disable Hibernation (default).cmd" /silent'
     exeDir: true
     wait: true
     weight: 20
@@ -28,10 +28,3 @@ actions:
 
     # Set 'Balanced' power scheme if keeping power saving
   - !run: {exe: 'powercfg.exe', args: '/setactive "381b4222-f694-41f0-9685-ff5bb260df2e"', option: '!disable-power-saving'}
-
-    # Delete scheme only used for installation
-  - !powerShell: 
-    command: >-
-      $gPath = """$([Environment]::GetFolderPath('Windows'))\atlasospowercfgguid""";
-      powercfg /delete """$((Get-Content $gPath -Raw).Trim())""";
-      Remove-Item $gPath -Force;

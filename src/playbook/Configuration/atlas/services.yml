@@ -12,7 +12,7 @@ actions:
 
   # Back up default Windows serivces & drivers
   - !powerShell:
-    command: >-
+    command: |
       .\BACKUP.ps1 -FilePath """$([Environment]::GetFolderPath('Windows'))\AtlasModules\Other\winServices.reg"""
     wait: true
     exeDir: true
@@ -21,21 +21,22 @@ actions:
   ## SCRIPTS                                                                                  ##
   ##############################################################################################
 
-  - !writeStatus: {status: 'Disabling Printing', option: 'disable-printing'}
-  - !cmd:
-    command: '"AtlasDesktop\3. General Configuration\Printing\Disable Printing.cmd" /silent'
-    option: 'disable-printing'
-    exeDir: true
-    wait: true
-  - !writeStatus: {status: 'Disabling Bluetooth', option: 'disable-bluetooth'}
-  - !cmd:
-    command: '"AtlasDesktop\3. General Configuration\Bluetooth\Disable Bluetooth.cmd" /silent'
-    option: 'disable-bluetooth'
-    exeDir: true
-    wait: true
   - !writeStatus: {status: 'Disabling File Sharing'}
   - !powerShell:
     command: '.\AtlasModules\Scripts\ScriptWrappers\DisableFileSharing.ps1 -Silent'
+    exeDir: true
+    wait: true
+    runas: currentUserElevated
+
+  - !writeStatus: {status: 'Disabling Location'}
+  - !cmd:
+    command: '"AtlasDesktop\3. General Configuration\Location\Disable Location (default).cmd" /silent'
+    exeDir: true
+    wait: true
+
+  - !writeStatus: {status: 'Configuring Indexing'}
+  - !cmd:
+    command: '"AtlasDesktop\3. General Configuration\Search Indexing\Minimal Search Indexing (default).cmd" /silent'
     exeDir: true
     wait: true
 
@@ -46,21 +47,18 @@ actions:
   - !writeStatus: {status: 'Configuring services'}
 
     # ------ Microsoft recommendation - 'OK to disable' ------
-  - !service: {name: 'lfsvc', operation: change, startup: 4}
-  - !service: {name: 'MapsBroker', operation: change, startup: 4}
   - !service: {name: 'OneSyncSvc', operation: change, startup: 4}
   - !service: {name: 'TrkWks', operation: change, startup: 4}
   - !service: {name: 'PcaSvc', operation: change, startup: 4}
   - !service: {name: 'DiagTrack', operation: change, startup: 4}
-  - !service: {name: 'WSearch', operation: change, startup: 4}
 
     # ------ Microsoft recommendation - 'Do not disable' -----
   - !service: {name: 'diagnosticshub.standardcollector.service', operation: change, startup: 4}
   - !service: {name: 'WerSvc', operation: change, startup: 4} 
-  - !service: {name: 'DispBrokerDesktopSvc', operation: change, startup: 4} 
 
     # ------- Microsoft recommendation - 'No guideance' ------
   - !service: {name: 'wercplsupport', operation: change, startup: 4}
+  - !service: {name: 'UCPD', operation: change, startup: 4}
 
   ##############################################################################################
   ## DRIVERS                                                                                  ##
@@ -68,7 +66,7 @@ actions:
 
   - !writeStatus: {status: 'Configuring drivers'}
 
-    # NetBios support can be enabled with the file sharing script
   - !service: {name: 'GpuEnergyDrv', operation: change, startup: 4}
+    # NetBios support can be enabled with the file sharing script
   - !service: {name: 'NetBT', operation: change, startup: 4}
   - !service: {name: 'Telemetry', operation: change, startup: 4}

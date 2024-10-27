@@ -1,73 +1,81 @@
 ---
 title: Root Playbook File
-description: Runs all of the playbook files
+description: Runs all of the Playbook files
 actions:
-    # AME Wizard Live Log for development playbooks
-    # Do not change the line position of this, otherwise things will break when using local-build
-  # - !run: {exe: 'cmd.exe', args: '/c start "AME Wizard Live Log" PowerShell -NoP -C "gc -Wait Logs\TIOutput.txt -EA SilentlyContinue | Write-Output; pause"', baseDir: true, wait: false}
+    # AME Wizard seemingly has a bug where it doesn't mount other user's Registry hives
+  - !writeStatus: {status: 'Preparing hives'}
+  - !powerShell:
+    command: |
+      $profileList = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList' -Name 'ProfilesDirectory', 'Default' -EA 0
+      $usersPath = if ([string]::IsNullOrEmpty($profileList.ProfilesDirectory)) { """$env:SystemDrive\Users""" } else { $profileList.ProfilesDirectory }
+      $defaultPath = if ([string]::IsNullOrEmpty($profileList.Default)) { """$usersPath\Default""" } else { $profileList.Default }
+
+      $count = 1
+      $prefix = 'HKU\AME_UserHive_'
+      foreach ($hive in (Get-ChildItem -Path $usersPath -Force -Depth 1 | ? { ($_.Name -eq 'NTUSER.DAT') -and ($_.Directory.Name -notlike 'defaultuser*')})) {
+          if (!$defaultFound -and ($hive.Directory.FullName -eq $defaultPath)) {
+              $defaultFound = $true
+              $name = """$prefix""" + """Default"""
+          } else {
+              $name = """$prefix""" + """$count"""
+          }
+
+          Write-Output """`nMounting $($hive.Directory.Name):"""
+          reg load """$name""" """$($hive.FullName)"""
+      }
+    weight: 10
+    wait: true
 
   - !writeStatus: {status: 'Copying files'}
-  - !cmd:
-    command: 'robocopy "AtlasModules" "%windir%\AtlasModules" /E /PURGE /IM /IT /NP > nul'
+  - !powerShell:
+    command: |
+      $windir = [Environment]::GetFolderPath('Windows')
+      @(
+          'AtlasModules',
+          'AtlasDesktop'
+      ) | ForEach-Object {
+          if (!(Test-Path $_)) { exit 1 }
+          Copy-Item -Path $_ -Destination $windir -Force -Recurse
+          if (!$?) { exit 2 }
+      }
+
+      Copy-Item -Path 'Themes\*' -Destination """$windir\Resources\Themes""" -Force -Recurse
     weight: 10
     wait: true
     exeDir: true
-  - !cmd:
-    command: 'robocopy "AtlasDesktop" "%windir%\AtlasDesktop" /E /PURGE /IM /IT /NP > nul'
-    weight: 10
-    wait: true
-    exeDir: true
-  - !cmd:
-    command: 'copy /y "Themes" "%windir%\Resources\Themes" > nul'
-    weight: 10
-    wait: true
-    exeDir: true
+    handleExitCodes: {'!0': halt}
 
     # Prevent annoying notifications during deployment
-  - !taskKill: {name: 'explorer'}
   - !cmd:
-    command: '"AtlasDesktop\3. General Configuration\Notifications\Disable Notifications.cmd" /includeuserservice'
+    command: 'DISABLENOTIFS.cmd'
     exeDir: true
     wait: true
     runas: currentUserElevated
+  - !taskKill: {name: 'explorer'}
+  - !taskKill: {name: 'ShellExperienceHost'}
   - !run: {exe: 'explorer.exe', runas: 'currentUser', wait: false}
 
-    # Prevent computer from going to sleep during deployment
-  - !powerShell: 
-    command: >-
-      $guid = New-Guid;
-      """$guid""" | Out-File -Force -LiteralPath """$([Environment]::GetFolderPath('Windows'))\atlasospowercfgguid""";
-      powercfg /duplicatescheme """e9a42b02-d5df-448d-aa00-03f14749eb61""" """$guid""";
-      powercfg /setactive """$guid""";
-      powercfg /changename """$guid""" """Atlas Installation Scheme""" """Duplicate of Ultimate Performance used during Atlas installation.""";
-      powercfg /x monitor-timeout-ac 0;
-      powercfg /x monitor-timeout-dc 0;
-      powercfg /x disk-timeout-ac 0;
-      powercfg /x disk-timeout-dc 0;
-      powercfg /x standby-timeout-ac 0;
-      powercfg /x standby-timeout-dc 0;
-      powercfg /x hibernate-timeout-ac 0;
-      powercfg /x hibernate-timeout-dc 0;
-
-  - !writeStatus: {status: 'Optimizing PowerShell'}
-tasks:
   # Configure PowerShell first so that other PowerShell scripts work
   # NGEN - .NET assemblies PowerShell optimization
-  - tweaks\scripts\script-ngen.yml
-  - tweaks\qol\config-powershell.yml
+  - !writeStatus: {status: 'Optimizing PowerShell'}
+  - !task: {path: 'tweaks\scripts\script-ngen.yml'}
+  - !task: {path: 'tweaks\qol\config-powershell.yml'}
 
-  # Cleanup script takes longer to finish so it has its own status
-  # It's ran here as you can't check when cleanmgr is finished
-  - tweaks\statuses\status-cleanup.yml
-  - tweaks\scripts\script-cleanup.yml
+  # Disk Cleanup is run first so it can run in the background
+  - !writeStatus: {status: 'Cleaning up'}
+  - !powerShell:
+    command: '.\CLEANUP.ps1'
+    exeDir: true
+    wait: true
+    runas: currentUserElevated
 
   # Set hidden Settings pages
   # Done before everything else as scripts will overwrite it
-  - tweaks\qol\set-hidden-settings-pages.yml
+  - !task: {path: 'tweaks\qol\set-hidden-settings-pages.yml'}
 
   # Main tasks
-  - atlas\start.yml
-  - atlas\services.yml
-  - atlas\components.yml
-  - atlas\appx.yml
-  - tweaks.yml
+  - !task: {path: 'atlas\start.yml'}
+  - !task: {path: 'atlas\services.yml'}
+  - !task: {path: 'atlas\components.yml'}
+  - !task: {path: 'atlas\appx.yml'}
+  - !task: {path: 'tweaks.yml'}

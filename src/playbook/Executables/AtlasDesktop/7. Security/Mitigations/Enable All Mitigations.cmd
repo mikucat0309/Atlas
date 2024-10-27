@@ -7,7 +7,7 @@ echo WARNING: This will force enable all security mitigiations for improved secu
 echo          This will slow down performance, and worsen compatibility. It is
 echo          recommended to use 'Set Windows Default Mitigations.cmd' instead.
 echo]
-ping 127.0.0.1 -n 2 > nul
+timeout /t 3 /nobreak > nul
 echo Press any key to continue anyways...
 pause > nul
 cls
@@ -20,12 +20,10 @@ whoami /user | find /i "S-1-5-18" > nul 2>&1 || (
 :main
 :: Enable Spectre and Meltdown
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" /v "FeatureSettingsOverrideMask" /t REG_DWORD /d "3" /f > nul
-wmic cpu get name | findstr "Intel" > nul && (
-    reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" /v "FeatureSettingsOverride" /t REG_DWORD /d "0" /f > nul
-)
-wmic cpu get name | findstr "AMD" > nul && (
-    reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" /v "FeatureSettingsOverride" /t REG_DWORD /d "64" /f > nul
-)
+powershell -NonI -NoP -C "$proc = (Get-CimInstance Win32_Processor | Select-Object -First 1).Name; $env:CPU = if ($proc | sls 'Intel' -Quiet) {'0'} elseif ($proc | sls 'AMD' -Quiet) {'64'}"
+if "%CPU%" neq "" (
+    reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" /v "FeatureSettingsOverride" /t REG_DWORD /d "%CPU%" /f > nul
+) 
 
 :: Enable Structured Exception Handling Overwrite Protection (SEHOP)
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\kernel" /v "DisableExceptionChainValidation" /t REG_DWORD /d "0" /f > nul

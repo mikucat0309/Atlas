@@ -1,10 +1,11 @@
 <h1 align="center">
-  <a href="http://atlasos.net" target="_blank"><img src="https://gcore.jsdelivr.net/gh/Atlas-OS/branding@main/github-banner.png" alt="Atlas" width="800"></a>
+  <a href="http://atlasos.net" target="_blank"><img src="https://gcore.jsdelivr.net/gh/Atlas-OS/branding@main/banners/banner-v3.png" alt="Atlas" width="800"></a>
 </h1>
   <p align="center">
-    <img alt="License" src="https://img.shields.io/github/license/atlas-os/atlas?style=for-the-badge&logo=github&color=1A91FF"/>
-    <img alt="Contributors" src="https://img.shields.io/github/contributors/atlas-os/atlas?style=for-the-badge&color=1A91FF" />
-    <img alt="Release" src="https://img.shields.io/github/release/atlas-os/atlas?style=for-the-badge&color=1A91FF" />
+    <a href="https://github.com/Atlas-OS/Atlas/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/atlas-os/atlas?style=for-the-badge&logo=github&color=1A91FF"/></a>
+    <a href="https://github.com/Atlas-OS/Atlas/graphs/contributors"><img alt="Contributors" src="https://img.shields.io/github/contributors/atlas-os/atlas?style=for-the-badge&color=1A91FF" /></a>
+    <a href="https://github.com/Atlas-OS/Atlas/releases/latest"><img alt="Release" src="https://img.shields.io/github/release/atlas-os/atlas?style=for-the-badge&color=1A91FF" /></a>
+    <a href="https://github.com/Atlas-OS/.github/blob/main/profile/CODE_OF_CONDUCT.md"><img alt="Code of Conduct" src="https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg?style=for-the-badge&color=1A91FF" /></a>
   </p>
 <p align="center">A transparent and lightweight modification to Windows, designed to optimize performance, privacy and usability.</p>
 
@@ -15,7 +16,7 @@
   •
   <a href="https://discord.atlasos.net" target="_blank">☎️ Discord</a>
   •
-  <a href="https://forum.atlasos.net" target="_blank">💬 Forum</a>
+  <a href="https://github.com/Atlas-OS/Atlas/discussions" target="_blank">💬 Discussions</a>
 </p>
 
 ## 📚 **Important Documentation**
@@ -25,7 +26,8 @@
 - [Branding](https://docs.atlasos.net/branding/)
 
 ## 🤔 What is Atlas?
-Atlas is an open-source project that enhances Windows by eliminating factors negatively impacting gaming performance. Optimizations include enhanced privacy, usability, performance, and changes for minimal stutters and input lag while focusing on maintaining functionality.
+
+AtlasOS, or Atlas, is an open-source project that enhances Windows by conveniently applying privacy, usability, and performance optimizations, all while maintaining functionality and [customizability](https://docs.atlasos.net/getting-started/post-installation/atlas-folder/general-configuration/).
 
 ## 👀 Why Atlas?
 ### 🔒 Enhanced Privacy
@@ -58,7 +60,10 @@ Playbooks are renamed **.zip** archives, with the password [`malte`](https://doc
 Although the GUI is not open source for AME Wizard, AME Wizard's entire backend (called [TrustedUninstaller](https://github.com/Ameliorated-LLC/trusted-uninstaller-cli)) is open source under MIT, which contains each action used to run Atlas. The Atlas Playbook is open source under the [GPLv3 license](https://github.com/Atlas-OS/Atlas/blob/main/LICENSE).
 
 ### 🔒 Legal Compliance
-As Atlas doesn't redistribute a modified Windows ISO, it complies with [Windows's Usage Terms](https://www.microsoft.com/en-us/Useterms/Retail/Windows/10/UseTerms_Retail_Windows_10_English.htm). In addition, Atlas does not alter activation in Windows.
+As Atlas doesn't redistribute a modified Windows ISO, it complies with [Windows's Usage Terms](https://www.microsoft.com/en-us/useterms/#areaheading-uid6738235). In addition, Atlas does not alter activation in Windows.
 
 ## 🎨 Brand kit
-Want to create your own Atlas wallpaper with some original creative designs? Download our brand kit [here](https://github.com/Atlas-OS/branding/archive/refs/heads/main.zip) and share your creations on our [forum](https://forum.atlasos.net/t/art-showcase).
+Want to create your own Atlas wallpaper with some original creative designs? Visit our [Branding Kit on Docs](https://docs.atlasos.net/branding/) and share your creations on our [GitHub Discussions](https://github.com/Atlas-OS/Atlas/discussions/categories/community-artwork)!
+
+## 💙 Contributors
+<a href="https://github.com/Atlas-OS/Atlas/graphs/contributors" target="_blank"><img src="https://contrib.rocks/image?repo=Atlas-OS/Atlas&columns=18" alt="Avatars of all contributors"></a>
