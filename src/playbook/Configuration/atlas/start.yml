@@ -31,7 +31,7 @@ actions:
   ################ NO LOCAL BUILD ################
 
   - !writeStatus: {status: 'Enabling DirectPlay'}
-  - !run: {exe: 'DISM.exe', args: '/Online /Enable-Feature /FeatureName:"DirectPlay" /NoRestart /All', weight: 30}
+  # - !run: {exe: 'DISM.exe', args: '/Online /Enable-Feature /FeatureName:"DirectPlay" /NoRestart /All', weight: 30}
   
   - !writeStatus: {status: 'Disabling Internet Explorer', builds: [ '<22000' ]}
   - !run: {exe: 'DISM.exe', args: '/Online /Disable-Feature /FeatureName:"Internet-Explorer-Optional-amd64" /NoRestart', weight: 30, builds: [ '<22000' ]}
@@ -49,7 +49,7 @@ actions:
     # 7-Zip, Visual C++ Runtimes, DirectX
   - !writeStatus: {status: 'Installing utilities'}
   - !powerShell:
-    command: '.\SOFTWARE.ps1'
+    command: '.\SOFTWARE.miku.ps1'
     exeDir: true
     wait: true
     weight: 150

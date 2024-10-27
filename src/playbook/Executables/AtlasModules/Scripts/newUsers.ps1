@@ -22,11 +22,11 @@ if ([System.Environment]::OSVersion.Version.Build -ge 22000) {
     reg import "$atlasDesktop\4. Interface Tweaks\File Explorer Customization\Gallery\Disable Gallery (default).reg" *>$null
 
     # Set ThemeMRU (recent themes)
-    Set-ThemeMRU | Out-Null
+    # Set-ThemeMRU | Out-Null
 }
 
 # Set lockscreen wallpaper
-Set-LockscreenImage
+# Set-LockscreenImage
 
 # Disable 'Network' in navigation pane
 reg import "$atlasDesktop\3. General Configuration\File Sharing\Network Navigation Pane\Disable Network Navigation Pane (default).reg" *>$null
